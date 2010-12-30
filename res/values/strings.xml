@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <string name="app_name">Recontrol</string>
+<string name="exit">Exit</string>
+<string name="next">Next</string>
+<string name="back">Back</string>
+<string name="select_account">Select an account to use:</string>
+<string name="no_accounts">There are no Google accounts on this phone.  In
+                           order to use Recontrol, you must have at least one
+                           Google account active on the phone in addition to
+                           the Android Market.  Please configure an account
+                           then restart Recontrol.</string>
+<string name="intro_text">Recontrol is an application to remotely control and
+                          track your phone.  It uses Android Cloud to Device
+                          Messaging to send messages that will invoke a GPS
+                          locator, Web download, or JavaScript file on your
+                          phone.  To continue, you will need to allow access
+                          to your Google account.  If you have more than one
+                          account, you will be prompted to select one.
+                          &lt;p>
+                          The ability to download any file and invoke
+                          JavaScript gives you the power to do absolutely
+                          anything allowed by Android on your phone through a
+                          remote service.
+                          </string>
+<string name="connecting_text">Connecting...</string>
+<string name="connect">Connect</string>
+</resources>

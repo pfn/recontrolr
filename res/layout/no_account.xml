@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+  <TextView android:text="@string/no_accounts" android:id="@+id/no_account"
+    android:layout_width="fill_parent" android:layout_height="wrap_content"/>
+  <LinearLayout android:id="@+id/footer" android:orientation="horizontal"
+    android:layout_width="fill_parent" android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true" android:background="#ff707070">
+    <Button android:id="@+id/exit" android:text="@string/exit"
+      android:layout_marginTop="5px" android:layout_weight="1"
+      android:layout_width="0dip" android:layout_height="wrap_content"/>
+    <Button android:id="@+id/next" android:text="@string/next"
+      android:layout_marginTop="5px" android:layout_weight="1"
+      android:layout_width="0dip" android:layout_height="wrap_content"
+      android:visibility="invisible"/>
+  </LinearLayout>
+</RelativeLayout>
