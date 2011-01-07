@@ -7,19 +7,22 @@
 
 <receiver android:permission="com.google.android.c2dm.permission.SEND" android:enabled="true" android:name="com.google.android.c2dm.C2DMBroadcastReceiver">
 <intent-filter>
-<action android:name="com.google.android.c2dm.intent.RECEIVE"></action>
-<category android:name="com.hanhuy.android.c2dm.generic"></category>
+<action android:name="com.google.android.c2dm.intent.RECEIVE"/>
+<category android:name="com.hanhuy.android.c2dm.generic"/>
 </intent-filter>
 <intent-filter>
-<action android:name="com.google.android.c2dm.intent.REGISTRATION"></action>
-<category android:name="com.hanhuy.android.c2dm.generic"></category>
+<action android:name="com.google.android.c2dm.intent.REGISTRATION"/>
+<category android:name="com.hanhuy.android.c2dm.generic"/>
 </intent-filter>
 </receiver>
 <service android:name=".C2DMReceiver"/>
-<activity android:launchMode="singleInstance" android:name=".SetupActivity"><intent-filter><action android:name="android.intent.action.MAIN"></action>
-<category android:name="android.intent.category.LAUNCHER"></category>
+<activity android:launchMode="singleInstance" android:name=".SetupActivity"><intent-filter><action android:name="android.intent.action.MAIN"/>
+<category android:name="android.intent.category.LAUNCHER"/>
 </intent-filter>
 </activity>
+<service android:name=".GeolocateService"/>
+<service android:name=".JavascriptService"/>
+<service android:name=".DownloadService"/>
 </application>
 
 <uses-sdk android:minSdkVersion="8"/>
@@ -32,7 +35,9 @@
 <uses-permission android:name="android.permission.WAKE_LOCK"/>
 <uses-permission android:name="android.permission.GET_ACCOUNTS"/>
 <uses-permission android:name="android.permission.USE_CREDENTIALS"/>
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+
+<uses-permission android:name="android.permission.READ_PHONE_STATE"></uses-permission>
 </manifest> 

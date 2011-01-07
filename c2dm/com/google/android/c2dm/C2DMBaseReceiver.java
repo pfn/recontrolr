@@ -146,6 +146,7 @@ public abstract class C2DMBaseReceiver extends IntentService {
     }
     
     
+    @SuppressWarnings("all") // prevent eclipse from warning about dead code
     private void handleRegistration(final Context context, Intent intent) {
         final String registrationId = intent.getStringExtra(EXTRA_REGISTRATION_ID);
         String error = intent.getStringExtra(EXTRA_ERROR);
@@ -167,7 +168,8 @@ public abstract class C2DMBaseReceiver extends IntentService {
             // Registration failed
             Log.e(TAG, "Registration error " + error);
             onError(context, error);
-            if ("SERVICE_NOT_AVAILABLE".equals(error)) {
+            // DISABLED backoff--@SuppressWarnings blocks this warning
+            if (false && "SERVICE_NOT_AVAILABLE".equals(error)) {
                 long backoffTimeMs = C2DMessaging.getBackoff(context);
                 
                 Log.d(TAG, "Scheduling registration retry, backoff = " + backoffTimeMs);

@@ -1,23 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    
-    <string name="app_name">Recontrol</string>
+
+<string name="app_name">Recontrolr</string>
 <string name="exit">Exit</string>
 <string name="next">Next</string>
 <string name="back">Back</string>
-<string name="select_account">Select an account to use:</string>
 <string name="no_accounts">There are no Google accounts on this phone.  In
-                           order to use Recontrol, you must have at least one
+                           order to use Recontrolr, you must have at least one
                            Google account active on the phone in addition to
                            the Android Market.  Please configure an account
-                           then restart Recontrol.</string>
-<string name="intro_text">Recontrol is an application to remotely control and
+                           then restart Recontrolr.</string>
+<string name="intro_text">Recontrolr is an application to remotely control and
                           track your phone.  It uses Android Cloud to Device
                           Messaging to send messages that will invoke a GPS
                           locator, Web download, or JavaScript file on your
-                          phone.  To continue, you will need to allow access
-                          to your Google account.  If you have more than one
-                          account, you will be prompted to select one.
+                          phone.  To continue, you will need to have Market
+                          and a Google account.
                           &lt;p>
                           The ability to download any file and invoke
                           JavaScript gives you the power to do absolutely
@@ -26,4 +24,16 @@
                           </string>
 <string name="connecting_text">Connecting...</string>
 <string name="connect">Connect</string>
+<string name="disconnect">Disconnect</string>
+<string name="disconnecting_text">Disconnecting...</string>
+<string name="connected_text_header">You are currently registered with the
+                                     Recontrolr service.  The web service has
+                                     the ability to communicate with and
+                                     control your phone.  Press \'Disconnect\'
+                                     to unregister your account from the
+                                     service.</string>
+<string name="account_names_text">Your device can be accessed using these
+                             accounts: %s</string>
+<string name="connected_text">You have successfully registered</string>
+<string name="disconnected_text">You have unregistered successfully</string>
 </resources>

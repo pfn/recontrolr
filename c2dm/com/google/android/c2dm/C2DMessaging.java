@@ -96,14 +96,13 @@ public class C2DMessaging {
         return prefs.getLong(BACKOFF, DEFAULT_BACKOFF);
     }
     
-    static void setBackoff(Context context, long backoff) {
+    public static void setBackoff(Context context, long backoff) {
         final SharedPreferences prefs = context.getSharedPreferences(
                 PREFERENCE,
                 Context.MODE_PRIVATE);
         Editor editor = prefs.edit();
         editor.putLong(BACKOFF, backoff);
         editor.commit();
-
     }
 
     // package

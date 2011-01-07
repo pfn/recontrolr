@@ -1,7 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
-</LinearLayout>
+  <TextView android:id="@+id/connected_text_header"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:text="@string/connected_text_header"/>
+  <TextView android:id="@+id/account_names_text"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_below="@+id/connected_text_header"
+      android:layout_marginTop="20dip"
+      android:text="@string/account_names_text"/>
+    
+  <ProgressBar android:id="@+id/progress_bar"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_above="@+id/disconnecting_text"
+      android:layout_marginLeft="5dip"
+      android:layout_marginRight="5dip"
+      android:layout_marginBottom="0dip"
+      style="?android:attr/progressBarStyleHorizontal"
+      android:indeterminate="true"
+      android:visibility="invisible"/>
+  <TextView
+      android:id="@+id/disconnecting_text"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:text="@string/disconnecting_text"
+      android:textColor="#A0A0A0"
+      android:layout_above="@+id/footer"
+      android:layout_marginLeft="5dip"
+      android:layout_marginTop="0dip"
+      android:layout_marginBottom="10dip"
+      android:visibility="invisible"/>
+  <LinearLayout android:id="@+id/footer"
+      android:orientation="horizontal"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_alignParentBottom="true"
+      android:background="#ff707070">
+    <Button android:id="@+id/exit"
+        android:text="@string/exit"
+        android:layout_marginTop="5px"
+        android:layout_weight="1"
+        android:layout_width="0dip"
+        android:layout_height="wrap_content"/>
+    <Button android:id="@+id/disconnect"
+        android:text="@string/disconnect"
+        android:layout_marginTop="5px"
+        android:layout_weight="1"
+        android:layout_width="0dip"
+        android:layout_height="wrap_content"
+        android:drawableRight="@drawable/ic_btn_next"/>
+  </LinearLayout>
+</RelativeLayout>
