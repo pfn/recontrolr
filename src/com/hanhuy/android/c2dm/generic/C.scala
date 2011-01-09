@@ -22,6 +22,7 @@ object C {
     val COMMAND_GEOLOCATE  = "ge"
     val COMMAND_DOWNLOAD   = "dl"
     val COMMAND_JAVASCRIPT = "js"
+    val COMMAND_UNREGISTER = "ur"
 
     val PARAM_DELETE  = "del"
     val PARAM_ID      = "id"

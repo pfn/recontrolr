@@ -90,18 +90,25 @@ class DownloadService extends IntentService("DownloadService") {
                             return
                         }
                     }
-                    val fout = new FileOutputStream(f, false)
+                    var fout: FileOutputStream = null
                     try {
+                        fout = new FileOutputStream(f, false)
                         val e = response.getEntity()
                         length = e.getContentLength
                         e.writeTo(fout)
+                    } catch {
+                        case e: Exception => report(replyTo, id, false, start,
+                                length, e.getMessage())
+                        return
                     } finally {
-                        fout.close()
+                        if (fout != null)
+                            fout.close()
                     }
                 } else {
                     val m = "Unable to download URL: " + code + ": " +
                             status.getReasonPhrase()
                     report(replyTo, id, false, start, length, m)
+                    return
                 }
             } finally {
                 response.getEntity().consumeContent()

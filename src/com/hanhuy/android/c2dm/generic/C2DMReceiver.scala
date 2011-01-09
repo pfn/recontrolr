@@ -1,10 +1,13 @@
 package com.hanhuy.android.c2dm.generic
 
 import android.accounts.AccountManager
+
 import android.util.Log
 import android.content.{Intent, Context}
 import android.preference.PreferenceManager
-import com.google.android.c2dm.C2DMBaseReceiver
+import com.google.android.c2dm.{C2DMBaseReceiver, C2DMessaging}
+
+import org.json.JSONObject;
 
 class C2DMReceiver extends C2DMBaseReceiver(C.SENDER_ID) with AccountNames {
 
@@ -28,8 +31,17 @@ class C2DMReceiver extends C2DMBaseReceiver(C.SENDER_ID) with AccountNames {
             case C.COMMAND_GEOLOCATE  => startGeolocate(intent, replyTo)
             case C.COMMAND_DOWNLOAD   => startDownload(intent, replyTo)
             case C.COMMAND_JAVASCRIPT => startJavaScript(intent, replyTo)
+            case C.COMMAND_UNREGISTER => unregisterService(id, replyTo)
             case _ => Log.e(C.TAG, "Received an unknown command: " + command)
         }
+    }
+    
+    private def unregisterService(id: String, replyTo: String) {
+        C2DMessaging.unregister(this)
+        val o = new JSONObject();
+        o.put("success", true);
+        o.put("time", 1L)
+        RecontrolrRegistrar.respond(replyTo, id, o.toString())
     }
     
     private def startJavaScript(i: Intent, replyTo: String) {
