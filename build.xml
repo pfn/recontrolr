@@ -101,7 +101,6 @@
           <available file="${obfuscated.jar.file}"/>
         </condition>
         <then>
-          <echo message="obfuscated jar is there"/>
           <property name="js.jar.tmp"
                   value="${out.classes.absolute.dir}/rhino_tmp"/>
           <mkdir dir="${js.jar.tmp}"/>
