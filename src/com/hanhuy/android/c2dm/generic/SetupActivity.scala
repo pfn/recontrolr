@@ -40,11 +40,14 @@ class SetupActivity extends Activity with AccountNames {
     var contentId: Int = _
 
     val updateReceiver: BroadcastReceiver = (c: Context, i: Intent) => {
-        val error = i.getStringExtra(C.EXTRA_ERROR)
+        var error = i.getStringExtra(C.EXTRA_ERROR)
         contentId match {
             case R.layout.intro     => {
                 if (error != null) {
+                    if (error == "SERVICE_NOT_AVAILABLE")
+                        error = getString(R.string.service_unavailable)
                     Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+
                     findView[Button](R.id.connect).setEnabled(true)
                     val bar = findView[ProgressBar](R.id.progress_bar)
                     bar.setVisibility(View.INVISIBLE)
@@ -58,7 +61,10 @@ class SetupActivity extends Activity with AccountNames {
             }
             case R.layout.connected => {
                 if (error != null) {
+                    if (error == "SERVICE_NOT_AVAILABLE")
+                        error = getString(R.string.service_unavailable)
                     Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+
                     findView[Button](R.id.disconnect).setEnabled(true)
                     val bar = findView[ProgressBar](R.id.progress_bar)
                     bar.setVisibility(View.INVISIBLE)
@@ -78,7 +84,8 @@ class SetupActivity extends Activity with AccountNames {
         C2DMessaging.setBackoff(this, 1000)
         val regId = prefs.getString(C.REGISTRATION_KEY, null)
         setContent(if (regId != null) R.layout.connected else R.layout.intro)
-        registerReceiver(updateReceiver, new IntentFilter(C.ACTION_UPDATE_UI))
+        registerReceiver(updateReceiver, new IntentFilter(C.ACTION_UPDATE_UI),
+                Manifest.permission.C2D_MESSAGE, null)
     }
     
     override def onDestroy() {

@@ -1,12 +1,19 @@
 package com.hanhuy.android.c2dm.generic
 
+import android.os.Build;
+
 object C {
     val SENDER_ID = "hanhuy.c2dm@gmail.com"
     val REGISTRATION_KEY = "registrationId"
     val ACCOUNTS_KEY = "accountNames"
     val TAG = "HhC2DM"
 
-    val RECONTROLR_SERVER = "http://galactica0.hanhuy.com:8002"
+    val RECONTROLR_SERVER = {
+        if (Build.MANUFACTURER == Build.UNKNOWN && Build.MODEL == "google_sdk")
+            "http://galactica0.hanhuy.com:8002"
+        else
+            "http://recontrolr.appspot.com"
+    }
     val REGISTER_URL      = RECONTROLR_SERVER + "/device/register"
     val UNREGISTER_URL    = RECONTROLR_SERVER + "/device/unregister"
 

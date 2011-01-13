@@ -36,4 +36,6 @@
                              accounts: %s</string>
 <string name="connected_text">You have successfully registered</string>
 <string name="disconnected_text">You have unregistered successfully</string>
+<string name="service_unavailable">Unable to contact Google registration
+                                   server, please try again.</string>
 </resources>

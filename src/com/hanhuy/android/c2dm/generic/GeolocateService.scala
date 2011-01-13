@@ -2,25 +2,34 @@ package com.hanhuy.android.c2dm.generic
 
 import android.app.Service
 import android.content.Context
-import android.location._
-import android.os.{Bundle, Handler, HandlerThread, Looper, SystemClock, IBinder}
+import android.location.{Location, LocationManager, GpsStatus, LocationListener}
+import android.os.{Bundle, Handler, HandlerThread, Looper, IBinder}
+import android.os.{PowerManager, SystemClock}
 import android.util.Log
 import android.content.Intent
-
+import PowerManager._
 import org.json.JSONObject
+
+import scala.collection.JavaConversions._
+import scala.collection.mutable.HashMap
 
 import Conversions._
 
-class GeolocateService extends Service {
+import GeolocateService.wlock
 
+object GeolocateService {
+    private var wlock: PowerManager#WakeLock = _
+}
+
+class GeolocateService extends Service {
     var handler: Handler = _
 
     lazy val lm = getSystemService(
             Context.LOCATION_SERVICE).asInstanceOf[LocationManager]
 
-    def gpsEnabled : Boolean =
+    def gpsEnabled: Boolean =
             lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
-    def netEnabled : Boolean =
+    def netEnabled: Boolean =
             lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 
     override def onBind(i: Intent) : IBinder = null
@@ -29,6 +38,13 @@ class GeolocateService extends Service {
         super.onCreate()
 
         val t = new HandlerThread("GeolocateService")
+        t.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            override def uncaughtException(t: Thread, ex: Throwable) {
+                Log.e(C.TAG, "Uncaught exception in Handler", ex)
+                if (wlock != null)
+                    wlock.release()
+            }
+        })
         t.start()
         handler = new Handler(t.getLooper())
     }
@@ -38,6 +54,15 @@ class GeolocateService extends Service {
     }
 
     override def onStartCommand(i: Intent, flags: Int, startId: Int) : Int = {
+        GeolocateService.synchronized {
+            if (wlock == null) {
+                val pm = getSystemService(
+                        Context.POWER_SERVICE).asInstanceOf[PowerManager]
+                wlock = pm.newWakeLock(
+                        PowerManager.PARTIAL_WAKE_LOCK, "GeolocateService")
+            }
+        }
+        wlock.acquire()
         handler.post(() => onHandleIntent(i, startId))
         Service.START_REDELIVER_INTENT
     }
@@ -51,22 +76,61 @@ class GeolocateService extends Service {
         catch {
             case e: Exception => {
                 Log.e(C.TAG, "Unable to query location", e)
+                wlock.release()
                 stopSelf(startId)
             }
         }
     }
     
-    // TODO FIXME
-    private def bestLocation(l1: Location, l2: Location) : Location = {
-        if (l1 == null) return l2
-        if (l2 == null) return l1
+    private def bestLocation(old1: Location, new1: Location) : Location = {
+        if (old1 == null) return new1
+        if (new1 == null) return old1
 
-        return l2
+        val timeDiff = new1.getTime() - old1.getTime()
+        val TWO_M = 2 * 60 * 1000
+        val isMuchNewer = timeDiff >  TWO_M
+        val isMuchOlder = timeDiff < -TWO_M
+        val isNewer = timeDiff > 0
+
+        if (isMuchNewer)
+            return new1
+        if (isMuchOlder)
+            return old1
+
+        if (old1.hasAccuracy() && !new1.hasAccuracy()) {
+            Log.d(C.TAG, "old location has accuracy but new one does not")
+            return old1
+        }
+        if (!old1.hasAccuracy() && new1.hasAccuracy()) {
+            Log.d(C.TAG, "new location has accuracy but old one does not")
+            return new1
+        }
+        if (old1.hasAccuracy() && new1.hasAccuracy()) {
+            Log.d(C.TAG, "both locations have accuracy")
+            val accuracyDiff = new1.getAccuracy() - old1.getAccuracy()
+            val isLessAccurate = accuracyDiff > 0.0
+            val isMoreAccurate = accuracyDiff < 0.0
+            val isMuchLessAccurate = accuracyDiff > 200
+            if (isMoreAccurate)
+                return new1
+            if (isNewer && !isLessAccurate)
+                return new1
+            val sameprovider = () => {
+                val p1 = new1.getProvider()
+                val p2 = old1.getProvider()
+
+                if (p1 == null) p2 == null else p1 == p2
+            }
+            if (isNewer && !isMuchLessAccurate && sameprovider())
+                return new1
+        }
+
+        return old1
     }
 
     private def getLocation(id: String, replyTo: String, startId: Int) {
         val start = SystemClock.elapsedRealtime()
-        
+
         var finish: Runnable = null
         var complete: Boolean = false
 
@@ -82,9 +146,6 @@ class GeolocateService extends Service {
             l2 = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
 
         loc = bestLocation(l1, l2)
-        Log.d(C.TAG, "Last GPS location: " + l1)
-        Log.d(C.TAG, "Last NET location: " + l2)
-        Log.d(C.TAG, "Best location: " + loc)
 
         val gpsListener = new GpsStatus.Listener {
             override def onGpsStatusChanged(status: Int) {
@@ -97,6 +158,13 @@ class GeolocateService extends Service {
         val locListener = new LocationListener() {
             override def onLocationChanged(l: Location) {
                 loc = bestLocation(loc, l)
+                val e = l.getExtras()
+                if (e != null) {
+                    for (k <- e.keySet()) {
+                        Log.d(C.TAG, l.getProvider() +
+                                ": " + k + " => " + e.get(k))
+                    }
+                }
                 Log.d(C.TAG, "Best location: " + loc)
                 if (complete)
                     finish.run()
@@ -114,7 +182,7 @@ class GeolocateService extends Service {
 
         var finished = false
         finish = () => {
-            Log.i(C.TAG, "getLocation exiting, done: " + complete)
+            Log.i(C.TAG, "getLocation finished, done: " + complete)
             handler.removeCallbacks(finish)
             if (gpsEnabled)
                 lm.removeGpsStatusListener(gpsListener)
@@ -122,6 +190,7 @@ class GeolocateService extends Service {
             lm.removeUpdates(locListener)
             report(replyTo, id, loc != null, complete, start, loc, error)
             finished = true
+            wlock.release()
             stopSelf(startId)
         }
 
@@ -149,27 +218,32 @@ class GeolocateService extends Service {
             done: Boolean, start: Long, loc: Location, error: String) {
         val result = new JSONObject()
 
+        val m = new HashMap[String,Any]()
         if (error != null) {
             Log.e(C.TAG, error)
-            result.put("error", error)
+            m ++= Map("error" -> error)
         }
 
         if (loc != null) {
-            result.put("provider",  loc.getProvider())
-            result.put("gpstime",   loc.getTime())
-            result.put("latitude",  loc.getLatitude())
-            result.put("longitude", loc.getLongitude())
+            m ++= Map(
+                "provider"  -> loc.getProvider(),
+                "gpstime"   -> loc.getTime(),
+                "latitude"  -> loc.getLatitude(),
+                "longitude" -> loc.getLongitude()
+            )
 
             if (loc.hasAccuracy())
-                result.put("accuracy", loc.getAccuracy())
+                m ++= Map("accuracy" -> loc.getAccuracy())
         }
         
-        result.put("gpsenabled",     gpsEnabled)
-        result.put("networkenabled", netEnabled)
-        result.put("gpsfix",         done)
-        result.put("success",        success)
-        result.put("time",           SystemClock.elapsedRealtime() - start)
+        m ++= Map(
+            "gpsenabled"     -> gpsEnabled,
+            "networkenabled" -> netEnabled,
+            "gpsfix"         -> done,
+            "success"        -> success,
+            "time"           -> (SystemClock.elapsedRealtime() - start)
+        )
 
-        RecontrolrRegistrar.respond(replyTo, id, result.toString())
+        RecontrolrRegistrar.respond(replyTo, id, new JSONObject(m).toString())
     }
 }

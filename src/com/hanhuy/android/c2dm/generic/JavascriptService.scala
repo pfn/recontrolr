@@ -2,9 +2,8 @@ package com.hanhuy.android.c2dm.generic
 
 import android.app.IntentService
 
-import android.content.Intent
-import android.os.Looper
-import android.os.SystemClock
+import android.content.{Context, Intent}
+import android.os.{PowerManager, SystemClock}
 import android.util.Log
 
 import java.io.{File, FileReader, InputStreamReader}
@@ -13,14 +12,19 @@ import org.mozilla.javascript.{Context => JSContext}
 import org.mozilla.javascript.{Function => JSFunction}
 import org.mozilla.javascript.{Script, Scriptable, ScriptableObject, UniqueTag}
 
-import org.json.JSONArray
-import org.json.JSONObject
+import org.json.{JSONArray, JSONObject, JSONTokener}
 
 import Conversions._
 
+import JavascriptService.wlock
+
+object JavascriptService {
+    var wlock: PowerManager#WakeLock = _
+}
 class JavascriptService extends IntentService("JavascriptService") {
     setIntentRedelivery(true)
 
+    /*
     lazy val jsonScript = {
         var script: Script = null
         _usingJS((c: JSContext) => {
@@ -32,12 +36,13 @@ class JavascriptService extends IntentService("JavascriptService") {
         })
         script
     }
+    */
 
     lazy val parentScope = {
         var scope: Scriptable = null
         _usingJS((c: JSContext) => {
             val s = c.initStandardObjects()
-            jsonScript.exec(c, s)
+            //jsonScript.exec(c, s)
             ScriptableObject.putConstProperty(s, "context", this)
             scope = s
         })
@@ -81,6 +86,22 @@ class JavascriptService extends IntentService("JavascriptService") {
     }
 
     override def onHandleIntent(i: Intent) {
+        JavascriptService.synchronized {
+            if (wlock == null) {
+                val pm = getSystemService(
+                        Context.POWER_SERVICE).asInstanceOf[PowerManager]
+                wlock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                        "JavascriptService")
+            }
+        }
+        wlock.acquire()
+        try {
+            _onHandleIntent(i)
+        } finally { // should never get an uncaught exception here
+            wlock.release()
+        }
+    }
+    private def _onHandleIntent(i: Intent) {
         val replyTo = i.getStringExtra(C.PARAM_REPLYTO)
         val id      = i.getStringExtra(C.PARAM_ID)
 
@@ -103,10 +124,17 @@ class JavascriptService extends IntentService("JavascriptService") {
                         })
                         Log.i(C.TAG, "JS result: " + result)
                         if (result != null) {
-                            if (result.trim().startsWith("{")) // } dumb eclipse
+                            val c = result.trim().charAt(0);
+                            if (c == '{') // } dumb eclipse
                                 o.put("result", new JSONObject(result))
-                            else if (result.trim().startsWith("["))
+                            else if (c == '[')
                                 o.put("result", new JSONArray(result))
+                            else if (c == '"') {
+                                // unescape any escaped strings
+                                val t = new JSONTokener(result)
+                                t.nextString('"')
+                                o.put("result", t.nextString('"'))
+                            }
                             else
                                 o.put("result", result)
                         }

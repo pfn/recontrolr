@@ -1,13 +1,12 @@
 package com.hanhuy.android.c2dm.generic
 
 import android.app.IntentService
-import android.content.Intent
-import android.os.SystemClock
+import android.content.{Context, Intent}
+import android.os.{PowerManager, SystemClock}
 import android.net.http.AndroidHttpClient
 import android.util.Log
 
-import java.io.File
-import java.io.FileOutputStream
+import java.io.{File, FileOutputStream}
 
 import org.apache.http.HttpResponse
 import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
@@ -17,6 +16,12 @@ import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.protocol.BasicHttpContext
 
 import org.json.JSONObject
+
+import DownloadService._
+
+object DownloadService {
+    var wlock: PowerManager#WakeLock = _
+}
 
 class DownloadService extends IntentService("DownloadService") {
     setIntentRedelivery(true)
@@ -29,10 +34,19 @@ class DownloadService extends IntentService("DownloadService") {
     }
 
     override def onHandleIntent(i: Intent) {
+        if (wlock == null) {
+            val pm = getSystemService(
+                    Context.POWER_SERVICE).asInstanceOf[PowerManager]
+            wlock = pm.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK, "DownloadService")
+        }
+        wlock.acquire()
         try {
             _onHandleIntent(i)
         } catch {
             case e: Exception => Log.e(C.TAG, "Could not download", e)
+        } finally {
+            wlock.release()
         }
     }
     private def _onHandleIntent(i: Intent) {
