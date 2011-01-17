@@ -1,13 +1,17 @@
 package com.hanhuy.android.c2dm.generic
+
 import SetupActivity._
+
 import android.accounts.AccountManager
-import android.app.Activity
+import android.app.{Activity, AlertDialog, Dialog}
 import android.content.{BroadcastReceiver, Intent, IntentFilter, Context}
+import android.content.{ComponentName, DialogInterface}
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.text.Html
 import android.util.Log
-import android.view.View
+import android.view.{View, Menu, MenuInflater, MenuItem}
 import android.widget._
 import AdapterView.OnItemClickListener
 
@@ -20,14 +24,21 @@ trait AccountNames { this: Context =>
     }
 }
 object SetupActivity {
-    implicit def toBroadcastReceiver(f: (Context, Intent) => Unit) :
+    implicit def toBroadcastReceiver[A](f: (Context, Intent) => A) :
         BroadcastReceiver = new BroadcastReceiver() {
         def onReceive(c: Context, i: Intent) = f(c, i)
     }
-    implicit def toOnClickListener(f: View => Unit) : View.OnClickListener =
+    implicit def toOnClickListener[A](f: View => A) : View.OnClickListener =
             new View.OnClickListener() { def onClick(v: View) = f(v) }
-    implicit def toOnItemClickListener(
-            f: (AdapterView[_], View, Int, Long) => Unit) :
+    implicit def toDialogInterfaceOnClickListener[A](
+            f: (DialogInterface, Int) => A) :
+                DialogInterface.OnClickListener = {
+        new DialogInterface.OnClickListener() {
+            def onClick(d: DialogInterface, id: Int) = f(d, id)
+        }
+    }
+    implicit def toOnItemClickListener[A](
+            f: (AdapterView[_], View, Int, Long) => A) :
             OnItemClickListener = new OnItemClickListener() {
                 def onItemClick(
                         av: AdapterView[_], v: View, pos: Int, id: Long) =
@@ -38,6 +49,8 @@ object SetupActivity {
 class SetupActivity extends Activity with AccountNames {
     lazy val prefs = PreferenceManager.getDefaultSharedPreferences(this)
     var contentId: Int = _
+    private val STEALTH_MODE_PROMPT = 1
+    private val STEALTH_MODE_ERROR  = 2
 
     val updateReceiver: BroadcastReceiver = (c: Context, i: Intent) => {
         var error = i.getStringExtra(C.EXTRA_ERROR)
@@ -77,7 +90,6 @@ class SetupActivity extends Activity with AccountNames {
                 }
             }
         }
-        ()
     }
     override protected def onCreate(state: Bundle) {
         super.onCreate(state)
@@ -86,6 +98,12 @@ class SetupActivity extends Activity with AccountNames {
         setContent(if (regId != null) R.layout.connected else R.layout.intro)
         registerReceiver(updateReceiver, new IntentFilter(C.ACTION_UPDATE_UI),
                 Manifest.permission.C2D_MESSAGE, null)
+                
+                            val pm = getPackageManager()
+                            val name = new ComponentName(
+                                    SetupActivity.this, ".SetupActivityAlias")
+                            val v = pm.getComponentEnabledSetting(name)
+                            Log.i(C.TAG, name + ": component enabled: " + v)
     }
     
     override def onDestroy() {
@@ -143,7 +161,59 @@ class SetupActivity extends Activity with AccountNames {
             } else {
                 setContent(R.layout.no_account)
             }
-            ()
         })
+    }
+
+    override def onCreateOptionsMenu(menu: Menu) : Boolean = {
+        val inflater = getMenuInflater();
+        inflater.inflate(R.menu.options, menu)
+        true
+    }
+    
+    override def onOptionsItemSelected(item: MenuItem) : Boolean = {
+        if (item.getItemId() == R.id.stealth_mode) {
+            if (contentId == R.layout.connected) {
+                showDialog(STEALTH_MODE_PROMPT)
+            } else {
+                showDialog(STEALTH_MODE_ERROR)
+            }
+            return true
+        }
+        return super.onOptionsItemSelected(item)
+    }
+    
+    override def onCreateDialog(id: Int) : Dialog = {
+        val builder = new AlertDialog.Builder(this)
+        builder.setCancelable(false)
+        id match {
+            case STEALTH_MODE_PROMPT => {
+                builder.setMessage(getString(R.string.stealth_mode_prompt))
+                builder.setPositiveButton(getString(R.string.yes),
+                        (d: DialogInterface, id: Int) => {
+                            val pm = getPackageManager()
+                            val name = new ComponentName(
+                                    SetupActivity.this, ".SetupActivityAlias")
+                            pm.setComponentEnabledSetting(name,
+                                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                                    0)
+                            Toast.makeText(SetupActivity.this,
+                                    getString(R.string.stealth_mode_enabled),
+                                    Toast.LENGTH_SHORT).show()
+                            d.dismiss()
+                        })
+                builder.setNegativeButton(getString(R.string.no),
+                        (d: DialogInterface, id: Int) => {
+                            d.cancel()
+                        })
+            }
+            case STEALTH_MODE_ERROR  => {
+                builder.setMessage(getString(R.string.stealth_mode_error))
+                builder.setNegativeButton(getString(R.string.back),
+                        (d: DialogInterface, id: Int) => {
+                            d.cancel()
+                        })
+            }
+        }
+        builder.create()
     }
 }

@@ -98,7 +98,7 @@ public abstract class C2DMBaseReceiver extends IntentService {
 
     
     @Override
-    public final void onHandleIntent(Intent intent) {
+    public /* final */ void onHandleIntent(Intent intent) {
         try {
             Context context = getApplicationContext();
             if (intent.getAction().equals(REGISTRATION_CALLBACK_INTENT)) {

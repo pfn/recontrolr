@@ -11,6 +11,13 @@ import org.json.JSONObject;
 
 class C2DMReceiver extends C2DMBaseReceiver(C.SENDER_ID) with AccountNames {
 
+    override def onHandleIntent(i: Intent) {
+        try {
+            RecontrolrRegistrar.init(this)
+        } finally {
+            super.onHandleIntent(i)
+        }
+    }
     override def onError(c: Context, errorId: String) {
         Log.e(C.TAG, "Received error: " + errorId)
         val intent = new Intent(C.ACTION_UPDATE_UI)

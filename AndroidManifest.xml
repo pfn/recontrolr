@@ -17,22 +17,25 @@
   </intent-filter>
 </receiver>
 
-<activity android:launchMode="singleInstance"
-  android:name=".SetupActivity">
+<activity android:launchMode="singleInstance" android:name=".SetupActivity">
+  <intent-filter>
+    <action android:name="android.intent.action.MAIN"/>
+  </intent-filter>
+</activity>
+<!-- define an alias to enable going stealth mode, hiding the launcher icon -->
+<activity-alias android:name=".SetupActivityAlias"
+    android:targetActivity=".SetupActivity">
   <intent-filter>
     <action android:name="android.intent.action.MAIN"/>
     <category android:name="android.intent.category.LAUNCHER"/>
   </intent-filter>
-</activity>
+</activity-alias>
 
-<service android:name=".C2DMReceiver"
-  android:permission="com.hanhuy.android.c2dm.generic.permission.C2D_MESSAGE"/>
-<service android:name=".GeolocateService"
-  android:permission="com.hanhuy.android.c2dm.generic.permission.C2D_MESSAGE"/>
-<service android:name=".JavascriptService"
-  android:permission="com.hanhuy.android.c2dm.generic.permission.C2D_MESSAGE"/>
-<service android:name=".DownloadService"
-  android:permission="com.hanhuy.android.c2dm.generic.permission.C2D_MESSAGE"/>
+<!-- internal services are not exported and do not need permissions -->
+<service android:name=".C2DMReceiver"/>
+<service android:name=".GeolocateService"/>
+<service android:name=".JavascriptService"/>
+<service android:name=".DownloadService"/>
 </application>
 
 <uses-sdk android:minSdkVersion="8"/>

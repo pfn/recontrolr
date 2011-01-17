@@ -1,6 +1,9 @@
 package com.hanhuy.android.c2dm.generic
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.content.pm.Signature
+
 import android.os.Build
 import android.telephony.TelephonyManager
 import android.net.http.AndroidHttpClient
@@ -14,9 +17,46 @@ import org.apache.http.client.entity.UrlEncodedFormEntity
 import scala.collection.JavaConversions._
 import scala.collection.mutable.Map
 import scala.collection.mutable.HashMap
+import scala.collection.mutable.HashSet
 import scala.collection.mutable.ArrayBuffer
 
 object RecontrolrRegistrar {
+    var _version: String = _
+    var _versionName: String = _
+    var _licenseVersion: String = "None"
+
+    def init(c: Context) {
+        if (_version != null) return
+
+        val pm = c.getPackageManager()
+        val info = pm.getPackageInfo("com.hanhuy.android.c2dm.generic",
+                PackageManager.GET_SIGNATURES)
+        try {
+            val license = pm.getPackageInfo(
+                    "com.hanhuy.android.c2dm.generic.license",
+                    PackageManager.GET_SIGNATURES)
+            if (info.signatures != null && license.signatures != null) {
+                val set1 = new HashSet[Signature]()
+                val set2 = new HashSet[Signature]()
+                for (sig <- info.signatures)
+                    set1 += sig
+                for (sig <- license.signatures)
+                    set2 += sig
+                if (set1 == set2) {
+                    _licenseVersion = "" + license.versionCode
+                } else {
+                    Log.w(C.TAG, "License signatures do not match!")
+                }
+            }
+        }
+        catch {
+            case e: PackageManager.NameNotFoundException => {
+                Log.i(C.TAG, "License not installed")
+            }
+        }
+        _version = "" + info.versionCode
+        _versionName = info.versionName
+    }
     def register(c: Context, id: String, names: Array[String]) {
         val params = map
         val ts = c.getSystemService(
@@ -50,6 +90,9 @@ object RecontrolrRegistrar {
             values += new BasicNameValuePair(k, params.getOrElse(k, null))
         }
         p.setHeader("Content-type", "application/x-www-form-urlencoded")
+        p.setHeader("X-Recontrolr-Version-Code", _version)
+        p.setHeader("X-Recontrolr-Version-Name", _versionName)
+        p.setHeader("X-Recontrolr-License-Version", _licenseVersion)
         p.setEntity(new UrlEncodedFormEntity(values))
         val client = AndroidHttpClient.newInstance("Recontrolr/1.0")
         var response: HttpResponse = null

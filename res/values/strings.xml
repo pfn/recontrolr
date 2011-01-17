@@ -2,6 +2,8 @@
 <resources>
 
 <string name="app_name">Recontrolr</string>
+<string name="yes">Yes</string>
+<string name="no">No</string>
 <string name="exit">Exit</string>
 <string name="next">Next</string>
 <string name="back">Back</string>
@@ -38,4 +40,14 @@
 <string name="disconnected_text">You have unregistered successfully</string>
 <string name="service_unavailable">Unable to contact Google registration
                                    server, please try again.</string>
+<string name="stealth_mode_enabled">Stealth mode enabled</string>
+<string name="stealth_mode_prompt">Enabling stealth mode will hide the
+                                   Recontrolr app icon from Launcher.  This
+                                   cannot be undone without reinstalling
+                                   Recontrolr (this may not be effective on
+                                   all devices). Are you sure?
+                                   </string>
+<string name="stealth_mode_error">Stealth mode can only be enabled after
+                                  successfully connecting and registering.
+                                  Please press the \'Connect\' button.</string>
 </resources>

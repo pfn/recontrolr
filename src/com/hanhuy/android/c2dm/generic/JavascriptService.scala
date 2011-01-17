@@ -2,11 +2,12 @@ package com.hanhuy.android.c2dm.generic
 
 import android.app.IntentService
 
+
 import android.content.{Context, Intent}
 import android.os.{PowerManager, SystemClock}
 import android.util.Log
 
-import java.io.{File, FileReader, InputStreamReader}
+import java.io.{File, FileReader, InputStreamReader, Reader}
 
 import org.mozilla.javascript.{Context => JSContext}
 import org.mozilla.javascript.{Function => JSFunction}
@@ -118,9 +119,55 @@ class JavascriptService extends IntentService("JavascriptService") {
                 val file = new File(js)
                 if (js.toLowerCase().endsWith(".js") && file.isFile()) {
                     val r = new FileReader(file)
+                    val header = "(function() {\n"
+                    val footer = "\n})()"
                     usingIO(r, () => {
+                        // wrap the reader in a closure for convenience
+                        val wrappedReader = new Reader() {
+                            override def close() = Unit
+                            var headerDone = false
+                            var footerDone = false
+                            var streamDone = false;
+                            override def read(
+                                    buf: Array[Char], off: Int, len: Int) :
+                                            Int = {
+                                if (!headerDone) {
+                                    val hlen = header.length
+                                    if (hlen > len) {
+                                        // shouldn't ever happen, who sets
+                                        // read sizes under 20 bytes??
+                                        throw new IllegalStateException(
+                                                "hlen > len")
+                                    }
+                                    val b = header.toCharArray()
+                                    System.arraycopy(b, 0, buf, off, hlen)
+                                    headerDone = true
+                                    return hlen
+                                }
+                                
+                                var c: Int = -1
+                                if (!streamDone)
+                                    c = r.read(buf, off, len)
+                                if (c == -1)
+                                    streamDone = true
+                                else {
+                                    return c
+                                }
+
+                                if (streamDone && !footerDone) {
+                                    val flen = footer.length
+                                    if (flen > len)
+                                        throw new IllegalStateException("flen > len")
+                                    val b = footer.toCharArray()
+                                    System.arraycopy(b, 0, buf, off, flen)
+                                    footerDone = true
+                                    return flen
+                                }
+                                -1
+                            }
+                        }
                         val result = usingJS((c: JSContext, s: Scriptable) => {
-                            c.evaluateReader(s, r, js, 1, null)
+                            c.evaluateReader(s, wrappedReader, js, 0, null)
                         })
                         Log.i(C.TAG, "JS result: " + result)
                         if (result != null) {
