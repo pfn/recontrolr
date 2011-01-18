@@ -42,3 +42,4 @@ object C {
     // for password-protected URL (HTTP-auth only)
     val PARAM_USER    = "usr"
     val PARAM_PASS    = "pwd"
+}
