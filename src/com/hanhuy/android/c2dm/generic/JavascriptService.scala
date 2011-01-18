@@ -4,7 +4,7 @@ import android.app.IntentService
 
 
 import android.content.{Context, Intent}
-import android.os.{PowerManager, SystemClock}
+import android.os.{Environment, PowerManager, SystemClock}
 import android.util.Log
 
 import java.io.{File, FileReader, InputStreamReader, Reader}
@@ -25,25 +25,10 @@ object JavascriptService {
 class JavascriptService extends IntentService("JavascriptService") {
     setIntentRedelivery(true)
 
-    /*
-    lazy val jsonScript = {
-        var script: Script = null
-        _usingJS((c: JSContext) => {
-            val r = new InputStreamReader(
-                    getResources().openRawResource(R.raw.json2))
-            usingIO(r, () => {
-                script = c.compileReader(r, "json2.js", 1, null)
-            })
-        })
-        script
-    }
-    */
-
     lazy val parentScope = {
         var scope: Scriptable = null
         _usingJS((c: JSContext) => {
             val s = c.initStandardObjects()
-            //jsonScript.exec(c, s)
             ScriptableObject.putConstProperty(s, "context", this)
             scope = s
         })
@@ -109,6 +94,8 @@ class JavascriptService extends IntentService("JavascriptService") {
         val start = SystemClock.elapsedRealtime()
         val o = new JSONObject()
         o.put("success", true)
+        val parent = if (i.hasExtra(C.PARAM_AUTOEXT))
+                Environment.getExternalStorageDirectory() else null
         val js = i.getStringExtra(C.PARAM_TARGET)
         try {
             if (js == null) {
@@ -116,11 +103,11 @@ class JavascriptService extends IntentService("JavascriptService") {
                 o.put("success", false)
                 o.put("error", "No JS target set")
             } else {
-                val file = new File(js)
+                val file = new File(parent, js)
                 if (js.toLowerCase().endsWith(".js") && file.isFile()) {
                     val r = new FileReader(file)
                     val header = "(function() {\n"
-                    val footer = "\n})()"
+                    val footer = "\n})()\n"
                     usingIO(r, () => {
                         // wrap the reader in a closure for convenience
                         val wrappedReader = new Reader() {
@@ -129,8 +116,7 @@ class JavascriptService extends IntentService("JavascriptService") {
                             var footerDone = false
                             var streamDone = false;
                             override def read(
-                                    buf: Array[Char], off: Int, len: Int) :
-                                            Int = {
+                                    buf: Array[Char], off: Int, len: Int) : Int = {
                                 if (!headerDone) {
                                     val hlen = header.length
                                     if (hlen > len) {
@@ -201,8 +187,9 @@ class JavascriptService extends IntentService("JavascriptService") {
                 o.put("success", false)
             }
         } finally {
-            if (i.hasExtra(C.PARAM_DELETE) && js != null)
-                new File(js).delete()
+            if (i.hasExtra(C.PARAM_DELETE) && js != null) {
+                new File(parent, js).delete()
+            }
         }
         o.put("time", SystemClock.elapsedRealtime() - start)
         RecontrolrRegistrar.respond(replyTo, id, o.toString())

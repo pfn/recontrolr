@@ -2,7 +2,7 @@ package com.hanhuy.android.c2dm.generic
 
 import android.app.IntentService
 import android.content.{Context, Intent}
-import android.os.{PowerManager, SystemClock}
+import android.os.{Environment, PowerManager, SystemClock}
 import android.net.http.AndroidHttpClient
 import android.util.Log
 
@@ -57,11 +57,12 @@ class DownloadService extends IntentService("DownloadService") {
         val user    = i.getStringExtra(C.PARAM_USER)
         val pass    = i.getStringExtra(C.PARAM_PASS)
         var length: Long = -1
-        
+
         val start = SystemClock.elapsedRealtime()
-        
-        
-        val f = new File(target)
+
+        val parent = if (i.hasExtra(C.PARAM_AUTOEXT))
+                Environment.getExternalStorageDirectory() else null
+        val f = new File(parent, target)
         if (f.isDirectory()) {
             val m = target + ": is a directory, cannot download"
             report(replyTo, id, false, start, length, m)
