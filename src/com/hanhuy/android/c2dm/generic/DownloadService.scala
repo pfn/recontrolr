@@ -49,7 +49,7 @@ class DownloadService extends IntentService("DownloadService") {
             wlock.release()
         }
     }
-    private def _onHandleIntent(i: Intent) {
+    def _onHandleIntent(i: Intent) {
         val u       = i.getStringExtra(C.PARAM_URL)
         val replyTo = i.getStringExtra(C.PARAM_REPLYTO)
         val id      = i.getStringExtra(C.PARAM_ID)
@@ -60,9 +60,12 @@ class DownloadService extends IntentService("DownloadService") {
 
         val start = SystemClock.elapsedRealtime()
 
-        val parent = if (i.hasExtra(C.PARAM_AUTOEXT))
+        val sdext = if (i.hasExtra(C.PARAM_AUTOEXT))
                 Environment.getExternalStorageDirectory() else null
-        val f = new File(parent, target)
+        val f = new File(sdext, target)
+        Log.d(C.TAG, "use auto storage path: " + i.hasExtra(C.PARAM_AUTOEXT))
+        Log.d(C.TAG, "parent storage (optional): " + sdext)
+        Log.i(C.TAG, "Download target: " + f)
         if (f.isDirectory()) {
             val m = target + ": is a directory, cannot download"
             report(replyTo, id, false, start, length, m)
@@ -93,6 +96,11 @@ class DownloadService extends IntentService("DownloadService") {
             try {
                 if (code >= 200 && code < 300) {
                     val parent = f.getParentFile()
+                    if (parent == null) {
+                        val m = f + ": is in root directory, cannot write"
+                        report(replyTo, id, false, start, length, m)
+                        return
+                    }
                     if (!parent.isDirectory()) {
                         if (parent.exists()) {
                             val m = parent.getPath() + ": parent not a dir"

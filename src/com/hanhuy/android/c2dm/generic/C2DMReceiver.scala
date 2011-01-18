@@ -34,13 +34,21 @@ class C2DMReceiver extends C2DMBaseReceiver(C.SENDER_ID) with AccountNames {
             return
         }
         RecontrolrRegistrar.ack(replyTo, id)
-        command match {
-            case C.COMMAND_GEOLOCATE  => startGeolocate(intent, replyTo)
-            case C.COMMAND_DOWNLOAD   => startDownload(intent, replyTo)
-            case C.COMMAND_JAVASCRIPT => startJavaScript(intent, replyTo)
-            case C.COMMAND_UNREGISTER => unregisterService(id, replyTo)
-            case _ => Log.e(C.TAG, "Received an unknown command: " + command)
+        val clazz = command match {
+            case C.COMMAND_GEOLOCATE  => classOf[GeolocateService]
+            case C.COMMAND_DOWNLOAD   => classOf[DownloadService]
+            case C.COMMAND_JAVASCRIPT => classOf[JavascriptService]
+            case C.COMMAND_UNREGISTER => {
+                unregisterService(id, replyTo)
+                null
+            }
+            case _ => {
+                Log.e(C.TAG, "Received an unknown command: " + command)
+                null
+            }
         }
+        if (clazz != null)
+            delegateService(command, clazz, intent, replyTo)
     }
     
     private def unregisterService(id: String, replyTo: String) {
@@ -51,41 +59,15 @@ class C2DMReceiver extends C2DMBaseReceiver(C.SENDER_ID) with AccountNames {
         RecontrolrRegistrar.respond(replyTo, id, o.toString())
     }
     
-    private def startJavaScript(i: Intent, replyTo: String) {
+    private def delegateService(cmd: String, service: Class[_],
+            i: Intent, replyTo: String) {
         if (replyTo == null) return
-        Log.i(C.TAG, "Processing javascript command")
-        val intent = new Intent(this, classOf[JavascriptService])
-        intent.putExtra(C.PARAM_REPLYTO, replyTo)
-        if (i.hasExtra(C.PARAM_DELETE))
-            intent.putExtra(C.PARAM_DELETE, true)
-        intent.putExtra(C.PARAM_TARGET, i.getStringExtra(C.PARAM_TARGET))
-        intent.putExtra(C.PARAM_ID, i.getStringExtra(C.PARAM_ID))
-        startService(intent)
-        
-    }
-    private def startDownload(i: Intent, replyTo: String) {
-        if (replyTo == null) return
-        Log.i(C.TAG, "Processing download command")
-        val intent = new Intent(this, classOf[DownloadService])
-        intent.putExtra(C.PARAM_REPLYTO, replyTo)
-        intent.putExtra(C.PARAM_ID, i.getStringExtra(C.PARAM_ID))
-        intent.putExtra(C.PARAM_URL, i.getStringExtra(C.PARAM_URL))
-        intent.putExtra(C.PARAM_TARGET, i.getStringExtra(C.PARAM_TARGET))
-        if (i.hasExtra(C.PARAM_USER))
-            intent.putExtra(C.PARAM_USER, i.getStringExtra(C.PARAM_USER))
-        if (i.hasExtra(C.PARAM_PASS))
-            intent.putExtra(C.PARAM_PASS, i.getStringExtra(C.PARAM_PASS))
+        Log.i(C.TAG, "Processing command: " + cmd)
+        val intent = new Intent(this, service)
+        intent.putExtras(i)
         startService(intent)
     }
-    private def startGeolocate(i: Intent, replyTo: String) {
-        if (replyTo == null) return
-        Log.i(C.TAG, "Processing geolocate command")
-        val intent = new Intent(this, classOf[GeolocateService])
-        intent.putExtra(C.PARAM_ID, i.getStringExtra(C.PARAM_ID))
-        intent.putExtra(C.PARAM_REPLYTO, replyTo)
-        startService(intent)
-    }
-    
+
     override def onRegistered(c: Context, id: String) {
         Log.i(C.TAG, "Received registration key: " + id)
         val prefs = PreferenceManager.getDefaultSharedPreferences(c)
