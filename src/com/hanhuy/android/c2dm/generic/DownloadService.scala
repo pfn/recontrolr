@@ -134,7 +134,7 @@ class DownloadService extends IntentService("DownloadService") {
                             length = f.length()
                     }
                 } else {
-                    val m = "Unable to download URL: " + code + ": " +
+                    val m = "Unable to download: " + code + ": " +
                             status.getReasonPhrase()
                     report(replyTo, id, false, start, length, m)
                     return

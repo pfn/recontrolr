@@ -190,8 +190,8 @@ class JavascriptService extends IntentService("JavascriptService") {
             if (i.hasExtra(C.PARAM_DELETE) && js != null) {
                 new File(parent, js).delete()
             }
+            o.put("time", SystemClock.elapsedRealtime() - start)
+            RecontrolrRegistrar.respond(replyTo, id, o.toString())
         }
-        o.put("time", SystemClock.elapsedRealtime() - start)
-        RecontrolrRegistrar.respond(replyTo, id, o.toString())
     }
 }
