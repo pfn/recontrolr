@@ -12,7 +12,7 @@ object C {
         if (Build.MANUFACTURER == Build.UNKNOWN && Build.MODEL == "google_sdk")
             "http://galactica0.hanhuy.com:8002"
         else
-            "http://recontrolr.appspot.com"
+            "https://recontrolr.appspot.com"
     }
     val REGISTER_URL      = RECONTROLR_SERVER + "/device/register"
     val UNREGISTER_URL    = RECONTROLR_SERVER + "/device/unregister"
