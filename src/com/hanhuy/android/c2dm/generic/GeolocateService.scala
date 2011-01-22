@@ -234,6 +234,12 @@ class GeolocateService extends Service {
 
             if (loc.hasAccuracy())
                 m ++= Map("accuracy" -> loc.getAccuracy())
+            if (loc.hasAltitude())
+                m ++= Map("altitude" -> loc.getAltitude())
+            if (loc.hasSpeed())
+                m ++= Map("speed" -> loc.getSpeed())
+            if (loc.hasBearing())
+                m ++= Map("speed" -> loc.getBearing())
         }
         
         m ++= Map(

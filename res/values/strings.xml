@@ -33,7 +33,8 @@
                                      the ability to communicate with and
                                      control your phone.  Press \'Disconnect\'
                                      to unregister your account from the
-                                     service.</string>
+                                     service.  The service is available at
+                                     https://recontrolr.appspot.com/</string>
 <string name="account_names_text">Your device can be accessed using these
                              accounts: %s</string>
 <string name="connected_text">You have successfully registered</string>
