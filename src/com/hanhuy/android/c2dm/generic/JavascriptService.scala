@@ -12,6 +12,7 @@ import java.io.{File, FileReader, InputStreamReader, Reader}
 import org.mozilla.javascript.{Context => JSContext}
 import org.mozilla.javascript.{Function => JSFunction}
 import org.mozilla.javascript.{Script, Scriptable, ScriptableObject, UniqueTag}
+import org.mozilla.javascript.NativeJSON
 
 import org.json.{JSONArray, JSONObject, JSONTokener}
 
@@ -60,10 +61,9 @@ class JavascriptService extends IntentService("JavascriptService") {
             scope.setPrototype(parentScope)
             scope.setParentScope(null)
             var result = f(c, scope)
-            ScriptableObject.putProperty(scope, "result", result)
             if (result != null)
-                result = c.evaluateString(scope,
-                        "JSON.stringify(result)", "json", 1, null)
+                result = NativeJSON.stringify(
+                        c, scope, result, null, null)
             if (result != null) {
                 string = JSContext.toString(result)
             }
