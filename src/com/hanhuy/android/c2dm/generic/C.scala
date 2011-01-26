@@ -31,15 +31,17 @@ object C {
     val COMMAND_JAVASCRIPT = "js"
     val COMMAND_UNREGISTER = "ur"
 
-    val PARAM_AUTOEXT = "ast"
-    val PARAM_DELETE  = "del"
-    val PARAM_ID      = "id"
-    val PARAM_URL     = "url"
+    val PARAM_AUTOEXT  = "ast"
+    val PARAM_HASHMD5  = "md5"
+    val PARAM_HASHSHA1 = "sh1"
+    val PARAM_DELETE   = "del"
+    val PARAM_ID       = "id"
+    val PARAM_URL      = "url"
     // where to download URL to or file to execute
-    val PARAM_TARGET  = "tgt"
+    val PARAM_TARGET   = "tgt"
     // status update responses to specified URL
-    val PARAM_REPLYTO = "rto"
+    val PARAM_REPLYTO  = "rto"
     // for password-protected URL (HTTP-auth only)
-    val PARAM_USER    = "usr"
-    val PARAM_PASS    = "pwd"
+    val PARAM_USER     = "usr"
+    val PARAM_PASS     = "pwd"
 }

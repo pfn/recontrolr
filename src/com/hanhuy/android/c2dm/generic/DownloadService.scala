@@ -1,12 +1,14 @@
 package com.hanhuy.android.c2dm.generic
 
 import android.app.IntentService
+
 import android.content.{Context, Intent}
 import android.os.{Environment, PowerManager, SystemClock}
 import android.net.http.AndroidHttpClient
 import android.util.Log
 
-import java.io.{File, FileOutputStream}
+import java.io.{File, FileOutputStream, InputStream}
+import java.security.MessageDigest
 
 import org.apache.http.HttpResponse
 import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
@@ -58,6 +60,8 @@ class DownloadService extends IntentService("DownloadService") {
         val pass    = i.getStringExtra(C.PARAM_PASS)
         var length: Long = -1
 
+        val doMD5 = i.hasExtra(C.PARAM_HASHMD5)
+        val doSHA1 = i.hasExtra(C.PARAM_HASHSHA1)
         val start = SystemClock.elapsedRealtime()
 
         val sdext = if (i.hasExtra(C.PARAM_AUTOEXT))
@@ -68,7 +72,7 @@ class DownloadService extends IntentService("DownloadService") {
         Log.i(C.TAG, "Download target: " + f)
         if (f.isDirectory()) {
             val m = target + ": is a directory, cannot download"
-            report(replyTo, id, false, start, length, m)
+            report(replyTo, id, false, start, length, null, null, m)
             return
         }
 
@@ -79,6 +83,8 @@ class DownloadService extends IntentService("DownloadService") {
                     new UsernamePasswordCredentials(user, pass))
         }
 
+        var sha1str: String = null
+        var md5str: String = null
         try {
             val get = new HttpGet(u)
             var response: HttpResponse = null
@@ -86,7 +92,8 @@ class DownloadService extends IntentService("DownloadService") {
                 response = client.execute(get, httpContext)
             } catch {
                 case e: Exception => {
-                    report(replyTo, id, false, start, length, e.getMessage())
+                    report(replyTo, id, false, start, length,
+                            null, null, e.getMessage())
                     Log.e(C.TAG, "failed to query URL: " + u, e)
                     throw e
                 }
@@ -98,33 +105,58 @@ class DownloadService extends IntentService("DownloadService") {
                     val parent = f.getParentFile()
                     if (parent == null) {
                         val m = f + ": is in root directory, cannot write"
-                        report(replyTo, id, false, start, length, m)
+                        report(replyTo, id, false, start, length, null, null, m)
                         return
                     }
                     if (!parent.isDirectory()) {
                         if (parent.exists()) {
                             val m = parent.getPath() + ": parent not a dir"
-                            report(replyTo, id, false, start, length, m)
+                            report(replyTo, id, false, start, length,
+                                    null, null, m)
                             return
                         }
                         if (!parent.mkdirs()) {
                             val m = parent.getPath() + ": can't to create dir"
-                            report(replyTo, id, false, start, length, m)
+                            report(replyTo, id, false, start, length,
+                                    null, null, m)
                             return
                         }
                     }
                     var fout: FileOutputStream = null
+                    var in: InputStream = null
                     var ex = false
                     try {
                         fout = new FileOutputStream(f, false)
                         val e = response.getEntity()
                         // TODO md5 and sha1 the content
-                        e.writeTo(fout)
+                        var sha1: MessageDigest = null
+                        if (doSHA1)
+                            sha1 = MessageDigest.getInstance("SHA1")
+                        var md5: MessageDigest = null
+                        if (doMD5)
+                            md5 = MessageDigest.getInstance("MD5")
+                        in = e.getContent()
+                        val buf = new Array[Byte](16384)
+                        var read: Int = 0
+                        read = in.read(buf, 0, 16384)
+                        while (read != -1) {
+                            if (doSHA1)
+                                sha1.update(buf, 0, read)
+                            if (doMD5)
+                                md5.update(buf, 0, read)
+                            fout.write(buf, 0, read)
+                            read = in.read(buf, 0, 16384)
+                        }
+                        //e.writeTo(fout)
+                        if (doMD5)
+                            md5str  = md5.digest().map("%02x" format _).mkString
+                        if (doSHA1)
+                            sha1str = sha1.digest().map("%02x" format _).mkString
                     } catch {
                         case e: Exception => {
                             ex = true
                             report(replyTo, id, false, start,
-                                    length, e.getMessage())
+                                    length, null, null, e.getMessage())
                             throw e
                         }
                     } finally {
@@ -136,7 +168,7 @@ class DownloadService extends IntentService("DownloadService") {
                 } else {
                     val m = "Unable to download: " + code + ": " +
                             status.getReasonPhrase()
-                    report(replyTo, id, false, start, length, m)
+                    report(replyTo, id, false, start, length, null, null, m)
                     return
                 }
             } finally {
@@ -145,16 +177,22 @@ class DownloadService extends IntentService("DownloadService") {
         } finally {
             client.close()
         }
-        report(replyTo, id, true, start, length, null)
+        report(replyTo, id, true, start, length, md5str, sha1str, null)
     }
     
     private def report(replyTo: String, id: String,
-            success: Boolean, start: Long, length: Long, error: String) {
+            success: Boolean, start: Long, length: Long,
+            md5: String, sha1: String, error: String) {
         val result = new JSONObject()
         result.put("success", success)
         if (!success) {
             Log.e(C.TAG, error)
             result.put("error", error)
+        } else {
+            if (sha1 != null)
+                result.put("sha1", sha1)
+            if (md5 != null)
+                result.put("md5", md5)
         }
         result.put("time", SystemClock.elapsedRealtime() - start)
         if (length != -1)
