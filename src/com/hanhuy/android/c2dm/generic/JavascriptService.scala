@@ -12,7 +12,7 @@ import java.io.{File, FileReader, InputStreamReader, Reader}
 import org.mozilla.javascript.{Context => JSContext}
 import org.mozilla.javascript.{Function => JSFunction}
 import org.mozilla.javascript.{Script, Scriptable, ScriptableObject, UniqueTag}
-import org.mozilla.javascript.NativeJSON
+import org.mozilla.javascript.{NativeJSON, ImporterTopLevel}
 
 import org.json.{JSONArray, JSONObject, JSONTokener}
 
@@ -29,7 +29,8 @@ class JavascriptService extends IntentService("JavascriptService") {
     lazy val parentScope = {
         var scope: Scriptable = null
         _usingJS((c: JSContext) => {
-            val s = c.initStandardObjects()
+            //val s = c.initStandardObjects()
+            val s = new ImporterTopLevel(c, true)
             ScriptableObject.putConstProperty(s, "context", this)
             scope = s
         })
@@ -107,7 +108,7 @@ class JavascriptService extends IntentService("JavascriptService") {
                 if (js.toLowerCase().endsWith(".js") && file.isFile()) {
                     val r = new FileReader(file)
                     val header = "(function() {\n"
-                    val footer = "\n})()\n"
+                    val footer = "\n})();\n"
                     usingIO(r, () => {
                         // wrap the reader in a closure for convenience
                         val wrappedReader = new Reader() {
