@@ -98,6 +98,8 @@ object RecontrolrRegistrar {
         var response: HttpResponse = null
         try {
             response = client.execute(p)
+        } catch {
+            case e: Exception => Log.e(C.TAG, "Unable to respond", e)
         } finally {
             client.close()
         }
@@ -121,6 +123,9 @@ object RecontrolrRegistrar {
     }
 
     private def log(r: HttpResponse, op: String) {
+        if (r == null)
+            return
+
         val status = r.getStatusLine()
         val code: java.lang.Integer = status.getStatusCode()
         Log.v(C.TAG, String.format("%s: %d %s",
