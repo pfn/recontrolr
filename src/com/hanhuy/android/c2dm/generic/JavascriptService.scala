@@ -31,6 +31,7 @@ class JavascriptService extends IntentService("JavascriptService") {
         _usingJS((c: JSContext) => {
             //val s = c.initStandardObjects()
             val s = new ImporterTopLevel(c, true)
+            JavaAdapter.init(c, s, false);
             ScriptableObject.putConstProperty(s, "context", this)
             scope = s
         })
