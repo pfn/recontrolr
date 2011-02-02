@@ -47,7 +47,7 @@ class JavascriptService extends IntentService("JavascriptService") {
     }
     private def _usingJS[A](f: (JSContext) => A) {
         val ctx = JSContext.enter()
-        ctx.setLanguageVersion(170)
+        ctx.setLanguageVersion(JSContext.VERSION_1_8)
         try {
             f(ctx)
         } finally {
