@@ -12,7 +12,8 @@ import java.io.{File, FileReader, InputStreamReader, Reader}
 import org.mozilla.javascript.{Context => JSContext}
 import org.mozilla.javascript.{Function => JSFunction}
 import org.mozilla.javascript.{Script, Scriptable, ScriptableObject, UniqueTag}
-import org.mozilla.javascript.{NativeJSON, ImporterTopLevel}
+import org.mozilla.javascript.{NativeJSON, LazilyLoadedCtor, ImporterTopLevel}
+import org.mozilla.javascript.{NativeJavaTopPackage, NativeJavaPackage}
 
 import org.json.{JSONArray, JSONObject, JSONTokener}
 
@@ -33,6 +34,14 @@ class JavascriptService extends IntentService("JavascriptService") {
             val s = new ImporterTopLevel(c, true)
             JavaAdapter.init(c, s, false);
             ScriptableObject.putConstProperty(s, "context", this)
+            val top = ScriptableObject.getProperty(
+                    s, "Packages").asInstanceOf[NativeJavaTopPackage]
+            val pkg = top.get("android", top)
+            s.defineProperty("android", pkg, ScriptableObject.DONTENUM)
+            // seems to throw an exception if used, don't lazy load
+            // the android package namespace for now
+            //new LazilyLoadedCtor(s, "android",
+            //        "org.mozilla.javascript.NativeJavaTopPackage", false)
             scope = s
         })
         scope

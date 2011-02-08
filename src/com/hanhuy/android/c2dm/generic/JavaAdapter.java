@@ -20,13 +20,13 @@ import java.lang.reflect.Method;
 public class JavaAdapter implements IdFunctionCall {
     public static void init(Context c, Scriptable scope, boolean sealed) {
         JavaAdapter obj = new JavaAdapter();
-        IdFunctionObject ctor = new IdFunctionObject(
+        IdFunctionObject ifo = new IdFunctionObject(
                 obj, FTAG, Id_JavaAdapter, "JavaAdapter", 1, scope);
-        ctor.markAsConstructor(null);
+        ifo.markAsConstructor(null);
         if (sealed)
-            ctor.sealObject();
+            ifo.sealObject();
 
-        ctor.exportAsScopeProperty();
+        ifo.exportAsScopeProperty();
     }
 
     @Override
@@ -77,6 +77,7 @@ public class JavaAdapter implements IdFunctionCall {
         public Object invoke(Object proxy, Method m, final Object[] args)
         throws Throwable {
             Object o = ScriptableObject.getProperty(self, m.getName());
+            // allow unimplemented methods
             if (o == Scriptable.NOT_FOUND)
                 return Undefined.instance;
             if (!(o instanceof Function))
