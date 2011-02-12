@@ -5,3 +5,23 @@ going on in the background, and that only 4 core permissions are required
 for its use.
 
 The terms of the license are GPLv3.
+
+Build instructions:
+
+ Prerequisites:
+  scala (built with 2.8.1)
+  android sdk (with the 2.2 and google api platforms)
+
+ create a local.properties file and add the following properties:
+
+  sdk.dir=/path/to/android-sdk
+  scala.lib.dir=/path/to/scala/lib/dir
+  key.store=/path/to/google/market/keystore
+  key.alias=NAME-OF-KEY
+  key.store.password=YOUR-KEY-PASSWORD
+
+ Build:
+  $ ant release
+
+  debug builds will not produce a usable apk due to the necessity of running
+  proguard on the scala libraries.
