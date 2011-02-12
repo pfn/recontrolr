@@ -166,7 +166,8 @@ class GeolocateService extends Service {
                     }
                 }
                 Log.d(C.TAG, "Best location: " + loc)
-                if (complete)
+                // do not wait for a location lock if GPS is not enabled
+                if (complete || !gpsEnabled)
                     finish.run()
             }
             override def onProviderDisabled(provider: String) {
