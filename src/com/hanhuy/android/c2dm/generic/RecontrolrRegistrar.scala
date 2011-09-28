@@ -3,6 +3,7 @@ package com.hanhuy.android.c2dm.generic
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.pm.Signature
+import android.provider.Settings
 
 import android.os.Build
 import android.telephony.TelephonyManager
@@ -61,11 +62,18 @@ object RecontrolrRegistrar {
         val params = map
         val ts = c.getSystemService(
                 Context.TELEPHONY_SERVICE).asInstanceOf[TelephonyManager]
+        val androidID = Settings.Secure.getString(c.getContentResolver(),
+                Settings.Secure.ANDROID_ID);
         if (ts != null) {
             val phone = ts.getLine1Number()
             val deviceid = ts.getDeviceId()
             params.put("phone_no", phone)
-            params.put("device_id", deviceid)
+            if (deviceid != null)
+                params.put("device_id", deviceid)
+            else
+                params.put("device_id", androidID)
+        } else {
+            params.put("device_id", androidID)
         }
         params.put("owner", names(0))
         params.put("managers", names.mkString(":"))

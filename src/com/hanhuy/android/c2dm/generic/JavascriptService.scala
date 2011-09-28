@@ -9,7 +9,8 @@ import android.util.Log
 
 import java.io.{File, FileReader, InputStreamReader, Reader}
 
-import org.mozilla.javascript.{Context => JSContext}
+import org.mozilla.javascript.Callable
+import org.mozilla.javascript.{ContextFactory, Context => JSContext}
 import org.mozilla.javascript.{Function => JSFunction}
 import org.mozilla.javascript.{Script, Scriptable, ScriptableObject, UniqueTag}
 import org.mozilla.javascript.{NativeJSON, LazilyLoadedCtor, ImporterTopLevel}
@@ -21,8 +22,40 @@ import Conversions._
 
 import JavascriptService.wlock
 
+class TimeoutJSContext extends JSContext(ContextFactory.getGlobal()) {
+    var startTime = 0l
+    // proguard is complaining that setInstructionObserverThreshold is missing
+    def _setInstructionObserverThreshold(t: Int) {
+        super.setInstructionObserverThreshold(t)
+    }
+}
+/*
+object TimeoutContextFactory {
+}
+*/
+class TimeoutContextFactory extends ContextFactory {
+    override def makeContext() : JSContext = {
+        val c = new TimeoutJSContext()
+        c._setInstructionObserverThreshold(10000)
+        c
+    }
+    override def observeInstructionCount(c: JSContext, count: Int) {
+        val ctx = c.asInstanceOf[TimeoutJSContext]
+        val delta = System.currentTimeMillis() - ctx.startTime
+        if (delta > 6 * 60 * 1000)
+            throw new Error("Execution time exceeded");
+    }
+
+    override def doTopCall(ca: Callable, c: JSContext,
+            scope: Scriptable, thisO: Scriptable,
+            args: Array[Object]) : Object = {
+        c.asInstanceOf[TimeoutJSContext].startTime = System.currentTimeMillis()
+        super.doTopCall(ca, c, scope, thisO, args)
+    }
+}
 object JavascriptService {
     var wlock: PowerManager#WakeLock = _
+    ContextFactory.initGlobal(new TimeoutContextFactory())
 }
 class JavascriptService extends IntentService("JavascriptService") {
     setIntentRedelivery(true)
